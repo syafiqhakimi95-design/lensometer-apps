@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lensometer by MSHO - Syafiq Cikgu Mata</title>
+    <style>
+        /* --- GLOBAL RESET --- */
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: #1a1a1a;
+            color: #ccc;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* --- HEADER --- */
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 600px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+
+        h1 {
+            color: white;
+            margin: 0 0 15px 0;
+            text-transform: uppercase;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        /* --- NAVIGATION BUTTONS --- */
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .mode-btn {
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 10px 25px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background-color: #39ff14;
+            color: black;
+            border-color: #39ff14;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+        }
+
+        /* --- INPUT FIELDS STYLING --- */
+        .input-box {
+            background: #000;
+            border: 1px solid #555;
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 1rem;
+            width: 100%; 
+            display: block; 
+        }
+
+        /* --- SECTIONS --- */
+        .mode-section {
+            display: none; /* Hidden by default */
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .mode-section.active-section {
+            display: flex;
+        }
+
+        /* --- TRAIN MODE SETTINGS --- */
+        .patient-settings {
+            background: #2b2b2b;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            justify-content: center;
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            width: 80px;
+        }
+        .setting-group label {
+            font-size: 0.8rem;
+            color: #39ff14;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        /* --- TEST MODE SETTINGS --- */
+        .test-controls {
+            background: #2b2b2b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .random-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            width: 100%;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .random-btn:hover { background-color: #0056b3; }
+
+        /* GRID LAYOUT FOR ANSWER SHEET */
+        .answer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto; 
+            gap: 10px;
+            background: #222;
+            padding: 10px;
+            border-radius: 6px;
+            align-items: end; 
+        }
+
+        .ans-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .ans-group label {
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-bottom: 4px;
+            text-align: left;
+        }
+
+        .submit-btn {
+            background-color: #39ff14;
+            color: black;
+            border: none;
+            padding: 0 15px;
+            height: 30px; 
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 1px; 
+        }
+        
+        #resultDisplay {
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-line; /* Allows new lines */
+            text-align: left;
+            background: #111;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            border: 1px solid #444;
+            display: none; /* Hidden until result */
+        }
+
+        /* --- MACHINE BODY --- */
+        .machine-body {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .eyepiece {
+            width: 320px;
+            height: 320px;
+            background-color: black;
+            border: 8px solid #333;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
+        }
+
+        .reticle-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: transform 0.1s linear; 
+        }
+
+        .reticle-group {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .vertical-group { flex-direction: row; gap: 10px; }
+        .v-line {
+            width: 3px; height: 180px;
+            background-color: #39ff14;
+            box-shadow: 0 0 8px #39ff14;
+        }
+
+        .horizontal-group { flex-direction: column; }
+        .h-line {
+            width: 180px; height: 8px;
+            background-color: #39ff14;
+            box-shadow: 0 0 8px #39ff14;
+        }
+
+        /* AXIS CONTROL */
+        .axis-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 320px;
+            width: 60px;
+            position: relative;
+        }
+        
+        .label-text {
+            color: #aaa;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .axis-readout {
+            font-size: 1.5rem;
+            color: #39ff14;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            margin-bottom: 15px; 
+            background: #111;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #333;
+        }
+
+        input[type=range].vertical-slider {
+            -webkit-appearance: none;
+            width: 250px; 
+            height: 10px;
+            background: #444;
+            outline: none;
+            border-radius: 5px;
+            transform: rotate(-90deg);
+            margin-top: 120px; 
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px; height: 20px;
+            background: #39ff14;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        /* POWER CONTROL */
+        .power-control {
+            width: 350px;
+            background: #2b2b2b;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #444;
+        }
+
+        input[type=range].power-slider {
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .readout {
+            font-size: 1.2rem;
+            color: #39ff14;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>Lensometer Simulator</h1>
+        <div class="nav-buttons">
+            <button id="btnTrain" class="mode-btn active" onclick="setMode('train')">TRAIN MODE</button>
+            <button id="btnTest" class="mode-btn" onclick="setMode('test')">TEST MODE</button>
+        </div>
+    </div>
+
+    <div id="trainSection" class="mode-section active-section">
+        <div class="patient-settings">
+            <div class="setting-group">
+                <label>Target Sph</label>
+                <input type="number" id="targetSph" class="input-box" min="-20" max="20" step="0.25" value="-3.00">
+            </div>
+            <div class="setting-group">
+                <label>Target Cyl</label>
+                <input type="number" id="targetCyl" class="input-box" min="-5" max="5" step="0.25" value="-0.75">
+            </div>
+            <div class="setting-group">
+                <label>Target Axis</label>
+                <input type="number" id="targetAxis" class="input-box" step="5" min="0" max="180" value="180">
+            </div>
+            <div style="display:flex; align-items:end;">
+                <button onclick="forceUpdate()" style="padding: 0 15px; height: 32px; cursor:pointer;">Set</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="testSection" class="mode-section">
+        <div class="test-controls">
+            <button class="random-btn" onclick="generateRandomPatient()">Load New Mystery Patient</button>
+            
+            <div class="answer-grid">
+                <div class="ans-group">
+                    <label>SPH</label>
+                    <input type="number" id="ansSph" class="input-box" placeholder="-2.00" step="0.25">
+                </div>
+                <div class="ans-group">
+                    <label>CYL</label>
+                    <input type="number" id="ansCyl" class="input-box" placeholder="-1.00" step="0.25">
+                </div>
+                <div class="ans-group">
+                    <label>AXIS</label>
+                    <input type="number" id="ansAxis" class="input-box" placeholder="180" step="5">
+                </div>
+                <button class="submit-btn" onclick="checkAnswer()">OK</button>
+            </div>
+
+            <div id="resultDisplay"></div>
+        </div>
+    </div>
+
+    <div class="machine-body">
+        <div class="eyepiece">
+            <div id="rotationWrapper" class="reticle-container">
+                <div id="sphereLines" class="reticle-group vertical-group">
+                    <div class="v-line"></div><div class="v-line"></div><div class="v-line"></div>
+                </div>
+                <div id="cylLines" class="reticle-group horizontal-group">
+                    <div class="h-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="axis-control">
+            <div class="label-text">Axis</div>
+            <div id="axisReadout" class="axis-readout">0°</div>
+            <input type="range" id="axisWheel" class="vertical-slider" min="0" max="180" step="5" value="0">
+        </div>
+    </div>
+
+    <div class="power-control">
+        <div class="label-text">Power Wheel (Diopters)</div>
+        <input type="range" id="powerWheel" class="power-slider" min="-25" max="25" step="0.25" value="0">
+        <div class="readout">Reading: <span id="powerReadout">0.00</span> D</div>
+    </div>
+
+    <div class="footer">Created by : Syafiq Cikgu Mata</div>
+
+    <script>
+        // --- VARIABLES ---
+        let currentMode = 'train';
+        let secretSph = -2.00;
+        let secretCyl = -1.00;
+        let secretAxis = 180;
+
+        // ELEMENTS
+        const powerInput = document.getElementById('powerWheel');
+        const axisInput = document.getElementById('axisWheel');
+        const powerText = document.getElementById('powerReadout');
+        const axisText = document.getElementById('axisReadout');
+        const rotationWrapper = document.getElementById('rotationWrapper');
+        const sphereLines = document.getElementById('sphereLines');
+        const cylLines = document.getElementById('cylLines');
+
+        const trainSection = document.getElementById('trainSection');
+        const testSection = document.getElementById('testSection');
+        const btnTrain = document.getElementById('btnTrain');
+        const btnTest = document.getElementById('btnTest');
+
+        const inSph = document.getElementById('targetSph');
+        const inCyl = document.getElementById('targetCyl');
+        const inAxis = document.getElementById('targetAxis');
+        const resultDisplay = document.getElementById('resultDisplay');
+
+        // --- MODE SWITCH ---
+        function setMode(mode) {
+            currentMode = mode;
+            if (mode === 'train') {
+                trainSection.classList.add('active-section');
+                testSection.classList.remove('active-section');
+                btnTrain.classList.add('active');
+                btnTest.classList.remove('active');
+            } else {
+                trainSection.classList.remove('active-section');
+                testSection.classList.add('active-section');
+                btnTrain.classList.remove('active');
+                btnTest.classList.add('active');
+                if (resultDisplay.style.display === "none") generateRandomPatient();
+            }
+            update();
+        }
+
+        // --- RANDOM GENERATOR ---
+        function generateRandomPatient() {
+            let randomStepsSph = Math.floor(Math.random() * 161);
+            secretSph = (randomStepsSph * 0.25) - 20;
+
+            let randomStepsCyl = Math.floor(Math.random() * 41);
+            secretCyl = (randomStepsCyl * 0.25) - 5;
+            
+            // Axis: 0 to 180 (Step 5 deg)
+            secretAxis = Math.floor(Math.random() * 36) * 5;
+
+            // Reset UI
+            document.getElementById('ansSph').value = '';
+            document.getElementById('ansCyl').value = '';
+            document.getElementById('ansAxis').value = '';
+            powerInput.value = 0;
+            axisInput.value = 0;
+
+            resultDisplay.innerHTML = "Patient Ready.";
+            resultDisplay.style.display = "block";
+            resultDisplay.style.color = "#007bff";
+            resultDisplay.style.borderColor = "#444";
+            
+            update();
+        }
+
+        // --- CALCULATE TRANSPOSED FORM (PLUS CYL) ---
+        function getTransposed(s, c, a) {
+            let newS = s + c;
+            let newC = -c;
+            let newA = a + 90;
+            if (newA > 180) newA -= 180;
+            if (newA === 0) newA = 180; // Standardize
+            return { s: newS, c: newC, a: newA };
+        }
+
+        // --- CHECK ANSWER (ACCEPT BOTH FORMS) ---
+        function checkAnswer() {
+            let uSph = parseFloat(document.getElementById('ansSph').value);
+            let uCyl = parseFloat(document.getElementById('ansCyl').value);
+            let uAxis = parseInt(document.getElementById('ansAxis').value);
+
+            if (isNaN(uSph) || isNaN(uCyl) || isNaN(uAxis)) {
+                resultDisplay.innerHTML = "Fill all fields.";
+                resultDisplay.style.color = "orange";
+                return;
+            }
+
+            // 1. Calculate the Plus Cyl form of the Secret
+            let trans = getTransposed(secretSph, secretCyl, secretAxis);
+
+            // 2. Check Match (Exact Floating Point Logic)
+            
+            // Match Minus Form?
+            let matchMinus = (uSph === secretSph && uCyl === secretCyl && uAxis === secretAxis);
+            
+            // Match Plus Form?
+            let matchPlus = (uSph === trans.s && uCyl === trans.c && uAxis === trans.a);
+
+            // Special Case: Spherical Lens (Cyl=0)
+            if (secretCyl === 0 && uSph === secretSph && uCyl === 0) {
+                matchMinus = true;
+            }
+
+            // Display Logic
+            if (matchMinus || matchPlus) {
+                resultDisplay.innerHTML = "CORRECT!";
+                resultDisplay.style.color = "#39ff14";
+                resultDisplay.style.borderColor = "#39ff14";
+            } else {
+                resultDisplay.style.color = "#ff4444";
+                resultDisplay.style.borderColor = "#ff4444";
+                
+                // Show BOTH answers
+                resultDisplay.innerHTML = `
+                    <span style="color:white">INCORRECT. Accepted Answers:</span>
+                    <br><br>
+                    Minus Form: <b>${secretSph.toFixed(2)} / ${secretCyl.toFixed(2)} x ${secretAxis}</b>
+                    <br>
+                    Plus Form: <b>${trans.s.toFixed(2)} / ${trans.c.toFixed(2)} x ${trans.a}</b>
+                `;
+            }
+        }
+
+        // --- PHYSICS ENGINE ---
+        function update() {
+            let P = parseFloat(powerInput.value);
+            let A = parseInt(axisInput.value);
+
+            let TSph, TCyl, TAxis;
+
+            if (currentMode === 'train') {
+                TSph = parseFloat(inSph.value);
+                TCyl = parseFloat(inCyl.value);
+                TAxis = parseInt(inAxis.value);
+            } else {
+                TSph = secretSph;
+                TCyl = secretCyl;
+                TAxis = secretAxis;
+            }
+
+            // UI
+            let sign = P > 0 ? "+" : "";
+            powerText.innerText = sign + P.toFixed(2);
+            axisText.innerText = A + "°";
+            rotationWrapper.style.transform = `rotate(${A}deg)`;
+
+            // --- CALCULATE BLUR based on Principal Meridians ---
+            
+            // 1. Angular Distance to PRIMARY Axis (TAxis)
+            let diff1 = Math.abs(A - TAxis);
+            if (diff1 > 90) diff1 = Math.abs(diff1 - 180); 
+            
+            // 2. Angular Distance to SECONDARY Axis (TAxis + 90)
+            let diff2 = Math.abs(Math.abs(A - TAxis) - 90);
+            if (diff2 > 90) diff2 = Math.abs(diff2 - 180);
+
+            // Targets
+            let blurV, blurH;
+            
+            if (TCyl === 0) {
+                let diff = Math.abs(P - TSph);
+                blurV = diff * 6;
+                blurH = diff * 6;
+            } else {
+                if (diff1 <= diff2) {
+                    // USER ALIGNED WITH PRIMARY AXIS (e.g., 180)
+                    // Vertical Lines (Sphere Mires) measure Sphere Power
+                    // Horizontal Lines (Cyl Mires) measure Sphere + Cyl Power
+                    let axisPenalty = diff1 / 10;
+                    blurV = (Math.abs(P - TSph) * 6) + axisPenalty;
+                    blurH = (Math.abs(P - (TSph + TCyl)) * 6) + axisPenalty;
+                } else {
+                    // USER ALIGNED WITH PERPENDICULAR AXIS (e.g., 90)
+                    // SWAP TARGETS!
+                    let axisPenalty = diff2 / 10;
+                    blurV = (Math.abs(P - (TSph + TCyl)) * 6) + axisPenalty;
+                    blurH = (Math.abs(P - TSph) * 6) + axisPenalty;
+                }
+            }
+
+            // Apply
+            sphereLines.style.filter = `blur(${blurV}px)`;
+            cylLines.style.filter = `blur(${blurH}px)`;
+            sphereLines.style.opacity = Math.max(0.2, 1 - (blurV/25));
+            cylLines.style.opacity = Math.max(0.2, 1 - (blurH/25));
+        }
+
+        function forceUpdate() { update(); }
+
+        powerInput.addEventListener('input', update);
+        axisInput.addEventListener('input', update);
+        inSph.addEventListener('input', update);
+        inCyl.addEventListener('input', update);
+        inAxis.addEventListener('input', update);
+
+        update();
+    </script>
+</body>
+</html>
